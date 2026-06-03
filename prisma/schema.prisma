@@ -1,0 +1,109 @@
+// Prisma schema for the collaborative document editor.
+//
+// Storage: SQLite. Locally this is a file (prisma/dev.db). In production we
+// point the same schema at Turso (libSQL) via the driver adapter — see
+// src/lib/db.ts. SQLite has no native enum/array types, so roles are stored
+// as validated strings ("VIEWER" | "EDITOR").
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  documents Document[] @relation("OwnedDocuments")
+  shares    Share[]    @relation("ReceivedShares")
+  versions  DocumentVersion[]
+  comments  Comment[]
+  presence  Presence[]
+}
+
+model Document {
+  id        String   @id @default(cuid())
+  title     String   @default("Untitled document")
+  content   String   @default("") // sanitized HTML produced by the editor
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner    User              @relation("OwnedDocuments", fields: [ownerId], references: [id], onDelete: Cascade)
+  shares   Share[]
+  versions DocumentVersion[]
+  comments Comment[]
+  presence Presence[]
+
+  @@index([ownerId])
+}
+
+model Share {
+  id         String   @id @default(cuid())
+  documentId String
+  userId     String
+  role       String   @default("VIEWER") // "VIEWER" | "COMMENTER" | "EDITOR"
+  createdAt  DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user     User     @relation("ReceivedShares", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, userId])
+  @@index([userId])
+}
+
+// Stretch feature: lightweight version history. A snapshot of document content
+// captured on demand so a user can review and restore prior states.
+model DocumentVersion {
+  id         String   @id @default(cuid())
+  documentId String
+  authorId   String
+  title      String
+  content    String
+  createdAt  DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  author   User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+}
+
+// Stretch feature: commenting. A comment may optionally quote the text selection
+// it refers to (anchored by quoted snippet, not by fragile positional offsets).
+model Comment {
+  id         String   @id @default(cuid())
+  documentId String
+  authorId   String
+  body       String
+  quote      String? // the selected text the comment refers to, if any
+  resolved   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  author   User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+}
+
+// Stretch feature: real-time presence indicators. One row per (document, user);
+// the client sends a heartbeat while a document is open. A user is "active" when
+// lastSeenAt is within the last ~15s. Polling-based so it works on serverless.
+model Presence {
+  id         String   @id @default(cuid())
+  documentId String
+  userId     String
+  lastSeenAt DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, userId])
+  @@index([documentId])
+}
