@@ -33,6 +33,8 @@ const config: Config = {
         // Flat design: very soft, low elevation only.
         card: "0 1px 2px 0 rgb(15 23 42 / 0.04)",
         pop: "0 4px 16px -4px rgb(15 23 42 / 0.12)",
+        // The document "page" — a paper sheet floating on the canvas.
+        sheet: "0 1px 3px rgb(15 23 42 / 0.06), 0 12px 32px -12px rgb(15 23 42 / 0.10)",
       },
     },
   },

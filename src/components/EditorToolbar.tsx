@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { type Editor } from "@tiptap/react";
 import {
   Bold,
@@ -15,6 +16,8 @@ import {
   AlignRight,
   Undo2,
   Redo2,
+  Check,
+  ChevronDown,
 } from "lucide-react";
 
 function Btn({
@@ -39,9 +42,9 @@ function Btn({
       onMouseDown={(e) => e.preventDefault()} // keep editor selection
       onClick={onClick}
       disabled={disabled}
-      className={`flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-sm font-medium transition disabled:opacity-40 ${
+      className={`flex h-8 min-w-8 cursor-pointer items-center justify-center rounded-md px-2 text-sm font-medium transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100 ${
         active
-          ? "bg-brand-600 text-white"
+          ? "bg-brand-50 text-brand-700 ring-1 ring-brand-200"
           : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
       }`}
     >
@@ -55,6 +58,80 @@ function Divider() {
 }
 
 const ICON = 17;
+
+/** Paragraph-style picker (Normal text / Heading 1–3) — the canonical doc-editor control. */
+function StyleMenu({ editor }: { editor: Editor }) {
+  const [open, setOpen] = useState(false);
+
+  const styles = [
+    {
+      label: "Normal text",
+      active: editor.isActive("paragraph"),
+      run: () => editor.chain().focus().setParagraph().run(),
+      cls: "text-sm",
+    },
+    {
+      label: "Heading 1",
+      active: editor.isActive("heading", { level: 1 }),
+      run: () => editor.chain().focus().toggleHeading({ level: 1 }).run(),
+      cls: "text-lg font-bold",
+    },
+    {
+      label: "Heading 2",
+      active: editor.isActive("heading", { level: 2 }),
+      run: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
+      cls: "text-base font-bold",
+    },
+    {
+      label: "Heading 3",
+      active: editor.isActive("heading", { level: 3 }),
+      run: () => editor.chain().focus().toggleHeading({ level: 3 }).run(),
+      cls: "text-sm font-semibold",
+    },
+  ];
+  const current = styles.find((s) => s.active) ?? styles[0];
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        title="Paragraph style"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => setOpen((v) => !v)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        className="flex h-8 w-32 cursor-pointer items-center justify-between gap-1 rounded-md px-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+      >
+        <span className="truncate">{current.label}</span>
+        <ChevronDown size={14} className="shrink-0 text-slate-400" />
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className="absolute left-0 z-50 mt-1 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-pop"
+        >
+          {styles.map((s) => (
+            <button
+              key={s.label}
+              role="menuitemradio"
+              aria-checked={s.active}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                s.run();
+                setOpen(false);
+              }}
+              className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-slate-700 transition hover:bg-slate-50 ${s.cls}`}
+            >
+              <span>{s.label}</span>
+              {s.active && <Check size={15} className="shrink-0 text-brand-600" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function EditorToolbar({ editor }: { editor: Editor | null }) {
   if (!editor) return null;
@@ -70,37 +147,30 @@ export default function EditorToolbar({ editor }: { editor: Editor | null }) {
     editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
   };
 
+  // Live word count (StarterKit has no counter; cheap to derive from plain text).
+  const words = editor.getText().trim().split(/\s+/).filter(Boolean).length;
+  const mins = Math.max(1, Math.ceil(words / 200));
+
   return (
     <div className="no-print flex flex-wrap items-center gap-0.5 rounded-xl border border-slate-200 bg-white p-1.5 shadow-card">
-      <Btn title="Undo" onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()}>
+      <Btn title="Undo (⌘Z)" onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()}>
         <Undo2 size={ICON} />
       </Btn>
-      <Btn title="Redo" onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()}>
+      <Btn title="Redo (⌘⇧Z)" onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()}>
         <Redo2 size={ICON} />
       </Btn>
       <Divider />
 
-      <Btn title="Heading 1" active={editor.isActive("heading", { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}>
-        H1
-      </Btn>
-      <Btn title="Heading 2" active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
-        H2
-      </Btn>
-      <Btn title="Heading 3" active={editor.isActive("heading", { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>
-        H3
-      </Btn>
-      <Btn title="Body text" active={editor.isActive("paragraph")} onClick={() => editor.chain().focus().setParagraph().run()}>
-        <span className="text-xs">Body</span>
-      </Btn>
+      <StyleMenu editor={editor} />
       <Divider />
 
-      <Btn title="Bold" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
+      <Btn title="Bold (⌘B)" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
         <Bold size={ICON} />
       </Btn>
-      <Btn title="Italic" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}>
+      <Btn title="Italic (⌘I)" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}>
         <Italic size={ICON} />
       </Btn>
-      <Btn title="Underline" active={editor.isActive("underline")} onClick={() => editor.chain().focus().toggleUnderline().run()}>
+      <Btn title="Underline (⌘U)" active={editor.isActive("underline")} onClick={() => editor.chain().focus().toggleUnderline().run()}>
         <UnderlineIcon size={ICON} />
       </Btn>
       <Btn title="Strikethrough" active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()}>
@@ -131,6 +201,10 @@ export default function EditorToolbar({ editor }: { editor: Editor | null }) {
       <Btn title="Align right" active={editor.isActive({ textAlign: "right" })} onClick={() => editor.chain().focus().setTextAlign("right").run()}>
         <AlignRight size={ICON} />
       </Btn>
+
+      <span className="ml-auto hidden items-center pr-1 text-xs font-medium tabular-nums text-slate-400 sm:flex">
+        {words.toLocaleString()} {words === 1 ? "word" : "words"} · {mins} min read
+      </span>
     </div>
   );
 }

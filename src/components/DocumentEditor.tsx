@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useEditor, EditorContent, BubbleMenu } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import LinkExt from "@tiptap/extension-link";
@@ -17,6 +17,10 @@ import {
   ChevronDown,
   Share2,
   RefreshCw,
+  Bold,
+  Italic,
+  Underline as UnderlineIcon,
+  Link2,
 } from "lucide-react";
 import { api, ApiError } from "@/lib/client";
 import { toast } from "./Toast";
@@ -46,6 +50,35 @@ export interface EditorInitial {
 }
 
 type SaveState = "idle" | "saving" | "saved" | "error";
+
+/** Compact button for the floating selection (bubble) toolbar. */
+function BubbleBtn({
+  onClick,
+  active,
+  title,
+  children,
+}: {
+  onClick: () => void;
+  active?: boolean;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      title={title}
+      aria-label={title}
+      aria-pressed={active}
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={onClick}
+      className={`flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition active:scale-95 ${
+        active ? "bg-brand-50 text-brand-700 ring-1 ring-brand-200" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
 
 export default function DocumentEditor({
   initial,
@@ -141,6 +174,16 @@ export default function DocumentEditor({
     setSaveState("saved");
     toast("Version restored", "success");
   }
+
+  const setBubbleLink = useCallback(() => {
+    if (!editor) return;
+    const previous = editor.getAttributes("link").href as string | undefined;
+    const url = window.prompt("Link URL (leave empty to remove):", previous ?? "");
+    if (url === null) return;
+    const chain = editor.chain().focus().extendMarkRange("link");
+    if (url === "") chain.unsetLink().run();
+    else chain.setLink({ href: url }).run();
+  }, [editor]);
 
   const getSelectionQuote = useCallback(() => {
     if (!editor) return "";
@@ -305,7 +348,27 @@ export default function DocumentEditor({
       )}
 
       <div className="flex flex-col gap-4 lg:flex-row">
-        <div className="print-area min-w-0 flex-1 rounded-2xl border border-slate-200 bg-white px-6 py-10 shadow-card sm:px-10">
+        <div className="print-area min-w-0 flex-1 rounded-xl border border-slate-200/70 bg-white px-6 py-12 shadow-sheet sm:px-14 sm:py-16">
+          {editor && canEdit && (
+            <BubbleMenu
+              editor={editor}
+              tippyOptions={{ duration: 120 }}
+              className="no-print flex items-center gap-0.5 rounded-lg border border-slate-200 bg-white p-1 shadow-pop"
+            >
+              <BubbleBtn title="Bold" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
+                <Bold size={16} />
+              </BubbleBtn>
+              <BubbleBtn title="Italic" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}>
+                <Italic size={16} />
+              </BubbleBtn>
+              <BubbleBtn title="Underline" active={editor.isActive("underline")} onClick={() => editor.chain().focus().toggleUnderline().run()}>
+                <UnderlineIcon size={16} />
+              </BubbleBtn>
+              <BubbleBtn title="Link" active={editor.isActive("link")} onClick={setBubbleLink}>
+                <Link2 size={16} />
+              </BubbleBtn>
+            </BubbleMenu>
+          )}
           <EditorContent editor={editor} />
         </div>
 
