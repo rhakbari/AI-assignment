@@ -2,7 +2,7 @@
 
 Add the unlisted Loom or YouTube link below after recording (3–5 minutes).
 
-**Video URL:** _<paste link here>_
+**Video URL:** https://www.youtube.com/watch?v=t8L_4k_7SyI
 
 ## Suggested script (3–5 min)
 

@@ -492,3 +492,5 @@ confirm read-only.
 > 2. **Record** the 3–5 min walkthrough and add the link to [VIDEO.md](./VIDEO.md).
 >
 > **Live URL:** https://ai-assignment-eight.vercel.app/
+>
+> **Walkthrough video:** https://www.youtube.com/watch?v=t8L_4k_7SyI
