@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { X, MessageSquare, Paperclip } from "lucide-react";
 import { api, ApiError } from "@/lib/client";
+import { toast } from "./Toast";
 
 interface Comment {
   id: string;
@@ -70,6 +72,7 @@ export default function CommentsPanel({
       setBody("");
       setQuote("");
       await load();
+      toast("Comment added", "success");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Could not add comment");
     } finally {
@@ -105,19 +108,30 @@ export default function CommentsPanel({
   return (
     <aside className="no-print flex w-full flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-sm lg:w-80">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-800">Comments</h3>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-700" aria-label="Close comments">
-          ✕
+        <h3 className="flex items-center gap-1.5 text-sm font-semibold text-slate-800">
+          <MessageSquare size={15} className="text-brand-600" /> Comments
+        </h3>
+        <button
+          onClick={onClose}
+          className="text-slate-400 transition hover:text-slate-700"
+          aria-label="Close comments"
+        >
+          <X size={16} />
         </button>
       </div>
 
       {canComment ? (
         <form onSubmit={add} className="mb-4">
           {quote && (
-            <div className="mb-1 flex items-start gap-1 rounded bg-amber-50 px-2 py-1 text-xs text-amber-800">
+            <div className="mb-1 flex items-start gap-1 rounded-lg bg-amber-50 px-2 py-1 text-xs text-amber-800">
               <span className="truncate">“{quote}”</span>
-              <button type="button" onClick={() => setQuote("")} className="ml-auto text-amber-500">
-                ✕
+              <button
+                type="button"
+                onClick={() => setQuote("")}
+                className="ml-auto text-amber-500 transition hover:text-amber-700"
+                aria-label="Remove quote"
+              >
+                <X size={13} />
               </button>
             </div>
           )}
@@ -132,10 +146,10 @@ export default function CommentsPanel({
             <button
               type="button"
               onClick={attachSelection}
-              className="text-xs text-gray-500 hover:text-gray-800"
+              className="inline-flex items-center gap-1 text-xs text-slate-500 transition hover:text-slate-800"
               title="Attach the text currently selected in the document"
             >
-              + Attach selection
+              <Paperclip size={13} /> Attach selection
             </button>
             <button
               type="submit"

@@ -12,11 +12,14 @@ Add the unlisted Loom or YouTube link below after recording (3–5 minutes).
    underline, lists). Point out the **"Saving… / All changes saved"** indicator, then
    refresh to show persistence.
 3. **Upload a file** (`.md` or `.docx`) and show it becoming an editable document.
-4. **Share** the *Q3 Product Roadmap*: add `carol@ajaia.dev` as Viewer and confirm
-   `bob@ajaia.dev` is an Editor.
-5. **Switch accounts**: sign in as Carol (read-only — toolbar hidden, "View only"
-   badge) and as Bob (can edit).
-6. **Stretch**: show **Version history** (save + restore) and **Export** (Markdown /
-   Print-to-PDF).
-7. Briefly note what was **deprioritized** (real-time presence/CRDT) and **why**, and
+4. **Role-based sharing**: open *Q3 Product Roadmap* → **Share** → show the three
+   roles (Viewer / Commenter / Editor) and the seeded collaborators.
+5. **Presence (real-time indicator)**: open the same doc in a second browser signed in
+   as Bob — show the **presence avatars** appear, and the "collaborator updated this
+   document — Reload" banner after Bob edits.
+6. **Comments**: as Carol (commenter), select some text → **Attach selection** → add a
+   comment; resolve it. Confirm Carol/Dana **cannot edit** (toolbar hidden / "View
+   only" / "Can comment" badge).
+7. **Version history** (save + restore) and **Export** (Markdown / Print-to-PDF).
+8. Briefly note what was **deprioritized** (full CRDT co-editing) and **why**, and
    **how AI** supported the build (see AI_WORKFLOW.md).

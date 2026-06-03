@@ -8,7 +8,18 @@ import Underline from "@tiptap/extension-underline";
 import LinkExt from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
 import Placeholder from "@tiptap/extension-placeholder";
+import {
+  ArrowLeft,
+  MessageSquare,
+  History as HistoryIcon,
+  Download,
+  Printer,
+  ChevronDown,
+  Share2,
+  RefreshCw,
+} from "lucide-react";
 import { api, ApiError } from "@/lib/client";
+import { toast } from "./Toast";
 import EditorToolbar from "./EditorToolbar";
 import ShareDialog from "./ShareDialog";
 import VersionHistory from "./VersionHistory";
@@ -75,7 +86,7 @@ export default function DocumentEditor({
         setSaveState("saved");
       } catch (err) {
         setSaveState("error");
-        if (err instanceof ApiError && err.status === 403) alert(err.message);
+        if (err instanceof ApiError && err.status === 403) toast(err.message, "error");
       }
     },
     [initial.id],
@@ -128,6 +139,7 @@ export default function DocumentEditor({
     setTitle(updated.title);
     editor?.commands.setContent(updated.content);
     setSaveState("saved");
+    toast("Version restored", "success");
   }
 
   const getSelectionQuote = useCallback(() => {
@@ -149,26 +161,42 @@ export default function DocumentEditor({
     <main className="mx-auto max-w-5xl px-4 py-6">
       <div className="no-print mb-4">
         <div className="mb-3 flex items-center justify-between gap-2">
-          <Link href="/documents" className="text-sm text-gray-500 hover:text-gray-800">
-            ← All documents
+          <Link
+            href="/documents"
+            className="inline-flex items-center gap-1 text-sm text-slate-500 transition hover:text-slate-900"
+          >
+            <ArrowLeft size={15} /> All documents
           </Link>
           <div className="flex items-center gap-3">
             <PresenceBar docId={initial.id} onUpdatedAt={onServerUpdatedAt} />
             <span
-              className={`text-xs ${saveState === "error" ? "text-red-600" : "text-gray-400"}`}
+              className={`inline-flex items-center gap-1.5 text-xs ${
+                saveState === "error" ? "text-red-600" : "text-slate-400"
+              }`}
               aria-live="polite"
             >
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${
+                  saveState === "saving"
+                    ? "animate-pulse bg-brand-500"
+                    : saveState === "error"
+                      ? "bg-red-500"
+                      : "bg-emerald-500"
+                }`}
+              />
               {statusLabel[saveState]}
             </span>
           </div>
         </div>
 
         {remoteChanged && (
-          <div className="mb-3 flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-            <span>A collaborator updated this document.</span>
+          <div className="mb-3 flex items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            <span className="flex items-center gap-2">
+              <RefreshCw size={15} /> A collaborator updated this document.
+            </span>
             <button
               onClick={() => window.location.reload()}
-              className="rounded-md bg-amber-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-amber-700"
+              className="rounded-lg bg-amber-600 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-amber-700"
             >
               Reload
             </button>
@@ -181,32 +209,43 @@ export default function DocumentEditor({
             onChange={(e) => onTitleChange(e.target.value)}
             disabled={!canEdit}
             placeholder="Untitled document"
-            className="min-w-0 flex-1 rounded-md border border-transparent px-1 py-1 text-2xl font-bold text-gray-900 outline-none hover:border-gray-200 focus:border-brand-500 disabled:cursor-default disabled:bg-transparent"
+            className="min-w-0 flex-1 rounded-lg border border-transparent px-2 py-1 text-2xl font-bold tracking-tight text-slate-900 outline-none transition hover:border-slate-200 focus:border-brand-500 disabled:cursor-default disabled:bg-transparent"
           />
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             {!canEdit && (
-              <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
-                {canComment ? "Can comment" : "View only"} · owner {initial.owner.name}
+              <span
+                className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                  canComment ? "bg-amber-50 text-amber-700" : "bg-slate-100 text-slate-600"
+                }`}
+              >
+                {canComment ? "Can comment" : "View only"}
               </span>
             )}
 
             <button
               onClick={() => setCommentsOpen((v) => !v)}
-              className={`rounded-lg border px-3 py-1.5 text-sm font-medium ${
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
                 commentsOpen
                   ? "border-brand-600 bg-brand-50 text-brand-700"
-                  : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                  : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
               }`}
             >
-              Comments{openComments > 0 ? ` · ${openComments}` : ""}
+              <MessageSquare size={15} />
+              <span className="hidden sm:inline">Comments</span>
+              {openComments > 0 && (
+                <span className="rounded-full bg-brand-600 px-1.5 text-[11px] font-semibold text-white">
+                  {openComments}
+                </span>
+              )}
             </button>
 
             {canEdit && (
               <button
                 onClick={() => setHistoryOpen((v) => !v)}
-                className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
               >
-                History
+                <HistoryIcon size={15} />
+                <span className="hidden sm:inline">History</span>
               </button>
             )}
 
@@ -214,24 +253,26 @@ export default function DocumentEditor({
               <button
                 onClick={() => setExportOpen((v) => !v)}
                 onBlur={() => setTimeout(() => setExportOpen(false), 150)}
-                className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
               >
-                Export ▾
+                <Download size={15} />
+                <span className="hidden sm:inline">Export</span>
+                <ChevronDown size={14} />
               </button>
               {exportOpen && (
-                <div className="absolute right-0 z-10 mt-1 w-52 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                <div className="absolute right-0 z-50 mt-1 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-pop">
                   <a
                     href={`/api/documents/${initial.id}/export?format=md`}
-                    className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50"
                   >
-                    Download as Markdown
+                    <Download size={15} /> Download as Markdown
                   </a>
                   <button
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => window.print()}
-                    className="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-50"
                   >
-                    Print / Save as PDF
+                    <Printer size={15} /> Print / Save as PDF
                   </button>
                 </div>
               )}
@@ -240,9 +281,13 @@ export default function DocumentEditor({
             {isOwner && (
               <button
                 onClick={() => setShareOpen(true)}
-                className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-brand-700"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-brand-700"
               >
-                Share{shareCount > 0 ? ` · ${shareCount}` : ""}
+                <Share2 size={15} />
+                Share
+                {shareCount > 0 && (
+                  <span className="rounded-full bg-white/25 px-1.5 text-[11px] font-semibold">{shareCount}</span>
+                )}
               </button>
             )}
           </div>
@@ -260,7 +305,7 @@ export default function DocumentEditor({
       )}
 
       <div className="flex flex-col gap-4 lg:flex-row">
-        <div className="print-area min-w-0 flex-1 rounded-xl border border-gray-200 bg-white px-8 py-10 shadow-sm">
+        <div className="print-area min-w-0 flex-1 rounded-2xl border border-slate-200 bg-white px-6 py-10 shadow-card sm:px-10">
           <EditorContent editor={editor} />
         </div>
 

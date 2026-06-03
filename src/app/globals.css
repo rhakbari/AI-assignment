@@ -3,20 +3,57 @@
 @tailwind utilities;
 
 :root {
-  --page: #f6f7f9;
+  --page: #f8fafc; /* slate-50 */
+  --ink: #0f172a; /* slate-900 */
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--page);
-  color: #1f2328;
+  color: var(--ink);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: #bfdbfe; /* brand-200 */
+  color: #0f172a;
+}
+
+/* Consistent, visible keyboard focus across the app (a11y). */
+*:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+/* Don't double-up the ring on inputs that already paint their own focus border. */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+}
+
+/* Respect users who prefer reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ---- Editor (ProseMirror / Tiptap) content styling ---- */
 .doc-content {
-  font-size: 1rem;
-  line-height: 1.7;
-  color: #1f2328;
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: #1e293b; /* slate-800 */
+  max-width: 70ch;
 }
 .doc-content:focus {
   outline: none;
@@ -25,21 +62,26 @@ body {
   margin-top: 0.75em;
 }
 .doc-content h1 {
-  font-size: 1.9rem;
+  font-size: 2rem;
   font-weight: 700;
-  line-height: 1.25;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
   margin-top: 0.4em;
+  color: #0f172a;
 }
 .doc-content h2 {
   font-size: 1.5rem;
   font-weight: 700;
   line-height: 1.3;
-  margin-top: 0.6em;
+  letter-spacing: -0.01em;
+  margin-top: 0.7em;
+  color: #0f172a;
 }
 .doc-content h3 {
   font-size: 1.2rem;
   font-weight: 600;
   margin-top: 0.6em;
+  color: #0f172a;
 }
 .doc-content ul {
   list-style: disc;
@@ -49,29 +91,35 @@ body {
   list-style: decimal;
   padding-left: 1.6rem;
 }
+.doc-content li::marker {
+  color: #94a3b8; /* slate-400 */
+}
 .doc-content li > ul,
 .doc-content li > ol {
   margin-top: 0.25em;
 }
 .doc-content blockquote {
-  border-left: 3px solid #d0d7de;
+  border-left: 3px solid #cbd5e1;
   padding-left: 1rem;
-  color: #57606a;
+  color: #475569;
+  font-style: italic;
 }
 .doc-content a {
-  color: #2f5be0;
+  color: #2563eb;
   text-decoration: underline;
+  text-underline-offset: 2px;
 }
 .doc-content code {
-  background: #eef1f4;
+  background: #f1f5f9;
   border-radius: 4px;
   padding: 0.1em 0.35em;
   font-size: 0.9em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 .doc-content pre {
-  background: #1f2328;
-  color: #f6f7f9;
-  border-radius: 8px;
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 10px;
   padding: 0.9rem 1.1rem;
   overflow-x: auto;
 }
@@ -85,9 +133,24 @@ body {
 .doc-content p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
-  color: #9aa3ad;
+  color: #94a3b8;
   pointer-events: none;
   height: 0;
+}
+
+/* Toast entrance */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-toast {
+  animation: toast-in 200ms ease-out;
 }
 
 /* Print: only the document content, for "Print / Save as PDF" */
@@ -105,6 +168,8 @@ body {
     top: 0;
     width: 100%;
     padding: 0 1rem;
+    border: none !important;
+    box-shadow: none !important;
   }
   .no-print {
     display: none !important;

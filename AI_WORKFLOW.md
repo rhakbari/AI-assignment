@@ -39,6 +39,10 @@ account of where AI helped, what I overrode, and how I kept judgment in the loop
 - **Authorization placement.** I insisted permission checks live in **pure functions
   re-checked server-side on every route**, rather than trusting client-side UI gating
   that an AI draft is happy to lean on.
+- **Real-time strategy.** For presence I rejected the WebSocket-first instinct (it
+  doesn't fit Vercel serverless without extra infra) in favour of a **DB-backed
+  heartbeat + polling** model, and chose **quoted-snippet** comment anchoring over
+  fragile ProseMirror positional anchoring — both conscious complexity/risk tradeoffs.
 - Trimmed over-eager extras (icon libraries, speculative abstractions) to keep the
   surface small and reviewable.
 

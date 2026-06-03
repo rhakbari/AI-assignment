@@ -29,12 +29,14 @@ still being real.
 
 ## Data model
 
-Four tables (see `prisma/schema.prisma`):
+Six tables (see `prisma/schema.prisma`):
 
 - **User** — id, email (unique), name, passwordHash.
 - **Document** — id, title, `content` (HTML), `ownerId`, timestamps.
-- **Share** — (documentId, userId, role) with a unique constraint; `role ∈ {VIEWER, EDITOR}`.
-- **DocumentVersion** — snapshots for the version-history stretch feature.
+- **Share** — (documentId, userId, role) with a unique constraint; `role ∈ {VIEWER, COMMENTER, EDITOR}`.
+- **DocumentVersion** — snapshots for the version-history feature.
+- **Comment** — per-document comments; optional `quote` (the selected text it refers to) + `resolved` flag.
+- **Presence** — one row per (document, user) with `lastSeenAt`, upserted on heartbeat.
 
 SQLite has no enum type, so `role` is a validated string. The unique
 `(documentId, userId)` constraint means sharing is an idempotent **upsert** —
@@ -47,7 +49,8 @@ All authorization lives in `src/lib/access.ts` as **pure functions**
 and reused identically across every route. Rules:
 
 - **Owner** → full control (edit, rename, delete, manage sharing).
-- **Editor** → edit content + rename.
+- **Editor** → edit content + rename + comment.
+- **Commenter** → view + comment, but cannot change the document.
 - **Viewer** → read-only.
 - **Delete and share-management are owner-only.**
 
@@ -61,6 +64,21 @@ The editor autosaves on a **800 ms debounce** after the last keystroke (title on
 600 ms debounce), with a live "Saving… / All changes saved" indicator. This keeps
 writes cheap while making persistence feel automatic. Pending timers are flushed on
 unmount.
+
+## Real-time presence & comments
+
+- **Presence is polling-based**, not WebSocket-based. This is a deliberate
+  serverless tradeoff: Vercel functions can't hold long-lived socket connections,
+  so a persistent socket server would mean extra infrastructure. Instead the open
+  editor upserts a `Presence` heartbeat and polls the active list every 5s; a user
+  is "here" if seen in the last 15s. Cheap, stateless, and works on any host.
+- The same poll returns the document's `updatedAt`. The client compares it to its
+  own last-saved timestamp, so if **another** editor saves, a "collaborator updated
+  this document — Reload" banner appears (without clobbering the local buffer).
+- **Comments** are anchored to a **quoted text snippet**, not to ProseMirror
+  positional offsets. Positional anchoring is fragile under concurrent edits and is
+  real work to maintain; quoting the selection gives 90% of the UX value (you can see
+  what a comment refers to) for a fraction of the complexity and risk.
 
 ## Security
 
@@ -88,20 +106,26 @@ unmount.
 ## What's working vs. incomplete
 
 **Working end-to-end** (verified via build + automated tests + scripted runtime checks):
-create/rename/edit/delete, autosave + reopen, `.txt/.md/.docx` import, share by email
-with viewer/editor roles, owned-vs-shared dashboard, server-enforced permissions,
-version snapshot/restore, Markdown export, print-to-PDF.
+create/rename/edit/delete, autosave + reopen, `.txt/.md/.docx` import, role-based
+sharing (viewer/commenter/editor), owned-vs-shared dashboard, server-enforced
+permissions, presence indicators + change banner, comments (add/resolve/delete,
+selection-anchored), version snapshot/restore, Markdown export, print-to-PDF.
 
-**Intentionally simplified:** no live multi-cursor presence; "collaboration" is
-asynchronous (refresh to see a collaborator's saved changes).
+**Intentionally simplified:** presence shows *who is here* and flags when a peer
+saved, but document content itself is not live-synced character-by-character — there
+is no CRDT/multi-cursor co-editing (you reload to pull a collaborator's saved edits).
 
 ## What I'd build next with another 2–4 hours
 
-1. **Live presence + change propagation** — start with polling/SWR revalidation of
-   the open document, then a `y-prosemirror` (Yjs) CRDT layer for true real-time.
+1. **True real-time co-editing** — upgrade presence-only to a `y-prosemirror` (Yjs)
+   CRDT layer with live cursors, served over a WebSocket provider (a small dedicated
+   socket service alongside the Vercel app).
 2. **Optimistic concurrency** — a content version/`updatedAt` check on PATCH so two
-   editors saving near-simultaneously can't silently clobber each other.
-3. **Comments / suggestion mode** — anchored to ProseMirror ranges.
-4. **Server-rendered PDF export** (vs. browser print) for consistent output.
-5. **A few integration tests** against the route handlers (login → share → 403 matrix)
-   to lock the authorization contract.
+   editors saving near-simultaneously can't silently clobber each other (the current
+   reload banner mitigates but doesn't merge).
+3. **Suggestion mode** — tracked insert/delete marks on top of the existing comment
+   model, with accept/reject.
+4. **Positionally-anchored comments** — map comments to ProseMirror ranges (with
+   relative positions) so highlights move with the text.
+5. **Server-rendered PDF export** (vs. browser print) and a few **integration tests**
+   against the route handlers to lock the authorization contract.

@@ -15,10 +15,12 @@ Built with **Next.js (App Router) + TypeScript + Tiptap + Prisma + SQLite/Turso*
 | **Editing** | Rich-text editor (Tiptap): bold, italic, underline, strikethrough, H1–H3, bullet/numbered lists, quotes, links, text alignment, undo/redo. **Autosaves** as you type. |
 | **Documents** | Create, rename (inline title), open, delete. Content + structure persist across refresh. |
 | **File upload** | Import `.txt`, `.md`, `.docx` → a new editable document. Max **5 MB**. Unsupported types are rejected with a clear message. |
-| **Sharing** | Every doc has an **owner**. Share by email as **Viewer** (read-only) or **Editor**. Dashboard separates **My documents** from **Shared with me**. |
-| **Auth** | Lightweight seeded login (signed httpOnly cookie session). Three demo users. |
+| **Role-based sharing** | Every doc has an **owner**. Share by email with one of three roles: **Viewer** (read-only), **Commenter** (view + comment), **Editor** (full edit). Dashboard separates **My documents** from **Shared with me**. |
+| **Real-time presence** | Live avatar stack of who's currently in a document (heartbeat + 5s polling). A banner appears when a collaborator saves changes, with one-click reload. |
+| **Comments** | Comment thread per document; optionally **anchored to a text selection**. Add / resolve / reopen / delete, with live updates. |
+| **Auth** | Lightweight seeded login (signed httpOnly cookie session). Four demo users covering every role. |
 | **Persistence** | Prisma + SQLite locally; Turso (libSQL) in production. |
-| **Stretch** | **Version history** (snapshot + restore) and **Export** (Markdown download + Print/Save-as-PDF). |
+| **Stretch (all 5 implemented)** | Real-time collaboration indicators · Commenting · Version history (snapshot + restore) · Export (Markdown + Print/Save-as-PDF) · Role-based permissions beyond basic access. |
 
 ### Demo accounts
 
@@ -26,12 +28,14 @@ All passwords are `password123`.
 
 | Email | Role in demo data |
 |-------|-------------------|
-| `alice@ajaia.dev` | Owns documents; shares "Q3 Product Roadmap" with Bob (edit) and Carol (view) |
-| `bob@ajaia.dev`   | Owns a doc; can **edit** Alice's shared roadmap |
-| `carol@ajaia.dev` | **View-only** on Alice's shared roadmap |
+| `alice@ajaia.dev` | **Owner** of "Q3 Product Roadmap"; shares it with everyone below |
+| `bob@ajaia.dev`   | **Editor** — can change content of the shared roadmap |
+| `carol@ajaia.dev` | **Commenter** — can comment but not edit (left a seeded comment) |
+| `dana@ajaia.dev`  | **Viewer** — read-only on the shared roadmap |
 
 > To demo sharing end-to-end: sign in as **Alice**, open *Q3 Product Roadmap*, click **Share**.
-> Then sign out and sign in as **Bob** (can edit) or **Carol** (view only).
+> Then sign out and sign in as **Bob** (edit), **Carol** (comment only), or **Dana** (view only).
+> Open the same doc in two browsers/accounts to see the **presence avatars** light up.
 
 ---
 
@@ -114,15 +118,19 @@ Vercel auto-detects Next.js and runs `npm run build`. No `vercel.json` needed.
 - **jose** (JWT) + **bcryptjs** — signed cookie sessions, hashed seeded passwords.
 - **zod** — request validation. **sanitize-html** — XSS-safe content storage.
 - **mammoth** (.docx), **marked** (.md), **turndown** (Markdown export).
-- **Tailwind CSS** — styling. **Vitest** — tests.
+- **Tailwind CSS** + **lucide-react** icons — styling. **Vitest** — tests.
+
+**Design system:** flat design with a slate + blue palette, **Plus Jakarta Sans**
+typography, SVG icons throughout (no emoji), soft elevation, 180ms transitions,
+visible keyboard focus rings, and `prefers-reduced-motion` support.
 
 ```
 src/
   app/
-    api/                 # route handlers: auth, documents, share, upload, export, versions
+    api/                 # route handlers: auth, documents, share, upload, export, versions, comments, presence
     documents/           # dashboard + editor pages (server components)
     login/               # login page
-  components/            # client UI: editor, toolbar, dashboard, share dialog, version history
+  components/            # client UI: editor, toolbar, dashboard, share dialog, version history, presence bar, comments panel
   lib/
     access.ts            # pure access-control logic (unit-tested)
     auth.ts              # session + password helpers

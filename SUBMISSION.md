@@ -23,14 +23,17 @@ what is included and the status of each requirement.
 | Create / rename / edit / save / reopen documents | ✅ Working |
 | Rich text (bold, italic, underline, headings, lists) | ✅ Working (+ strikethrough, quote, link, alignment) |
 | File upload → editable document (`.txt`, `.md`, `.docx`, ≤5 MB) | ✅ Working |
-| Sharing: owner + grant access + owned-vs-shared distinction | ✅ Working (Viewer/Editor roles) |
+| Sharing: owner + grant access + owned-vs-shared distinction | ✅ Working |
 | Persistence across refresh | ✅ Working (SQLite local / Turso prod) |
 | Validation & error handling | ✅ zod validation, typed API errors, friendly UI messages |
-| At least one meaningful automated test | ✅ 20 tests (access control + file parsing/XSS) |
+| At least one meaningful automated test | ✅ 22 tests (access-control matrix + file parsing/XSS) |
 | Architecture note | ✅ ARCHITECTURE.md |
 | Clear setup/run instructions | ✅ README.md |
+| **Stretch: real-time collaboration indicators** | ✅ Presence avatars (heartbeat + poll) + "collaborator updated" reload banner |
+| **Stretch: commenting / suggestion mode** | ✅ Comments (selection-anchored, add/resolve/delete, live) |
 | **Stretch: version history** | ✅ Snapshot + restore |
-| **Stretch: export** | ✅ Markdown download + Print/Save-as-PDF |
+| **Stretch: export to PDF or Markdown** | ✅ Markdown download + Print/Save-as-PDF |
+| **Stretch: role-based permissions beyond basic access** | ✅ Viewer / Commenter / Editor + owner |
 
 ## Run locally (summary)
 
@@ -50,12 +53,14 @@ Seeded users — password for all is **`password123`**:
 
 | Email | Use for |
 |-------|---------|
-| `alice@ajaia.dev` | Owner; shares "Q3 Product Roadmap" with Bob (edit) and Carol (view) |
-| `bob@ajaia.dev` | Demonstrates **Editor** access on a shared doc |
-| `carol@ajaia.dev` | Demonstrates **Viewer** (read-only) access |
+| `alice@ajaia.dev` | **Owner** of "Q3 Product Roadmap"; manages sharing |
+| `bob@ajaia.dev` | **Editor** — can change content |
+| `carol@ajaia.dev` | **Commenter** — can comment, not edit (left a seeded comment) |
+| `dana@ajaia.dev` | **Viewer** — read-only |
 
-**Suggested review path for sharing:** sign in as Alice → open *Q3 Product Roadmap*
-→ **Share** → sign out → sign in as Carol (view only) then Bob (can edit).
+**Suggested review path:** sign in as Alice → open *Q3 Product Roadmap* → **Share**
+(note Viewer/Commenter/Editor roles) → open the doc in a second browser as Bob to see
+**presence avatars** → as Carol add a **comment** → as Dana confirm read-only.
 
 ## Live deployment
 
@@ -72,7 +77,10 @@ Seeded users — password for all is **`password123`**:
 
 ## Known limitations
 
-- Collaboration is **asynchronous** — no live multi-cursor presence; refresh to see a
-  collaborator's saved edits. (Rationale and next steps in ARCHITECTURE.md.)
+- **Presence is polling-based** (heartbeat + 5s poll) and shows *who is here* + flags
+  when a peer saves; document content is **not** live character-synced (no CRDT
+  multi-cursor co-editing — reload to pull a peer's saved edits). Deliberate
+  serverless tradeoff; rationale + next steps in ARCHITECTURE.md.
+- Comments are anchored to a **quoted snippet**, not to live ProseMirror positions.
 - `.docx` import preserves semantic structure (headings/lists/emphasis), not complex
   layout (tables, images, columns).

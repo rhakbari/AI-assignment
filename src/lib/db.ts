@@ -22,6 +22,15 @@ function createPrismaClient(): PrismaClient {
     });
     return new PrismaClient({ adapter });
   }
+  // On a serverless host (e.g. Vercel) the local SQLite file does not exist, so
+  // every query would fail with an opaque error. Make the misconfiguration loud.
+  if (process.env.NODE_ENV === "production") {
+    console.error(
+      "[db] TURSO_DATABASE_URL is not set in production. " +
+        "The local SQLite file is unavailable on serverless hosts — " +
+        "set TURSO_DATABASE_URL / TURSO_AUTH_TOKEN and run `npm run db:init:turso` + `npm run db:seed`.",
+    );
+  }
   return new PrismaClient();
 }
 

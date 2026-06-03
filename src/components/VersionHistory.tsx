@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { X, History as HistoryIcon, Save, RotateCcw } from "lucide-react";
 import { api, ApiError } from "@/lib/client";
+import { toast } from "./Toast";
 
 interface Version {
   id: string;
@@ -44,6 +46,7 @@ export default function VersionHistory({
     try {
       await api(`/api/documents/${docId}/versions`, { method: "POST", json: {} });
       await load();
+      toast("Version saved", "success");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Could not save version");
     } finally {
@@ -70,19 +73,25 @@ export default function VersionHistory({
   }
 
   return (
-    <div className="no-print mb-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+    <div className="no-print mb-3 rounded-xl border border-slate-200 bg-white p-4 shadow-card">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-800">Version history</h3>
+        <h3 className="flex items-center gap-1.5 text-sm font-semibold text-slate-800">
+          <HistoryIcon size={15} className="text-brand-600" /> Version history
+        </h3>
         <div className="flex items-center gap-2">
           <button
             onClick={saveVersion}
             disabled={busy}
-            className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
           >
-            Save current version
+            <Save size={14} /> Save current version
           </button>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-700" aria-label="Close history">
-            ✕
+          <button
+            onClick={onClose}
+            className="text-slate-400 transition hover:text-slate-700"
+            aria-label="Close history"
+          >
+            <X size={16} />
           </button>
         </div>
       </div>
@@ -108,9 +117,9 @@ export default function VersionHistory({
               <button
                 onClick={() => restore(v.id)}
                 disabled={busy}
-                className="shrink-0 rounded-md border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                className="inline-flex shrink-0 items-center gap-1 rounded-md border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
               >
-                Restore
+                <RotateCcw size={13} /> Restore
               </button>
             </li>
           ))}

@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { X, Share2, Trash2 } from "lucide-react";
 import { api, ApiError } from "@/lib/client";
+import { toast } from "./Toast";
 import type { ShareEntry } from "./DocumentEditor";
 
 type ShareRole = ShareEntry["role"];
@@ -42,6 +44,7 @@ export default function ShareDialog({
       const next = [...shares.filter((s) => s.userId !== entry.userId), entry];
       sync(next);
       setEmail("");
+      toast(`Shared with ${entry.name} (${entry.role.toLowerCase()})`, "success");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Could not share");
     } finally {
@@ -74,17 +77,23 @@ export default function ShareDialog({
 
   return (
     <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4"
+      className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 px-4 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+        className="animate-toast w-full max-w-md rounded-2xl bg-white p-6 shadow-pop"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">Share document</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-700" aria-label="Close">
-            ✕
+          <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
+            <Share2 size={18} className="text-brand-600" /> Share document
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-slate-400 transition hover:text-slate-700"
+            aria-label="Close"
+          >
+            <X size={18} />
           </button>
         </div>
 
@@ -147,9 +156,11 @@ export default function ShareDialog({
                 </select>
                 <button
                   onClick={() => revoke(s)}
-                  className="rounded-md px-2 py-1 text-xs text-gray-400 hover:bg-red-50 hover:text-red-600"
+                  title="Remove access"
+                  aria-label={`Remove ${s.name}`}
+                  className="rounded-md p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
                 >
-                  Remove
+                  <Trash2 size={15} />
                 </button>
               </div>
             </div>
